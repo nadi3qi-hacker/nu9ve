@@ -28,13 +28,11 @@
   .icon-btn{width:40px;height:40px;display:grid;place-items:center;border-radius:10px;border:1px solid #eee;background:#fff;transition:transform .06s}
   .icon-btn:active{transform:scale(.95)}
   .toolbar{display:flex;gap:8px;align-items:center}
-  /* grid/lista */
   .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
   .skill-card{display:flex;flex-direction:column;gap:8px;align-items:flex-start;min-height:120px}
   .dot{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-weight:800;color:#fff}
   .progress{height:8px;background:#EEE7DD;border-radius:999px;overflow:hidden;width:100%}
   .progress > span{display:block;height:100%;background:var(--primary);width:0%;transition:width .35s ease}
-  /* mapa 5 niveles */
   .path{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:10px}
   .lvl{position:relative;background:#fff;border:1px solid #E5E7EB;border-radius:12px;min-height:84px;padding:10px;display:flex;flex-direction:column;gap:6px;animation:pop .25s ease}
   .lvl .badge{display:flex;align-items:center;gap:6px}
@@ -43,20 +41,17 @@
   .lvl .p span{display:block;height:100%;background:var(--primary);width:0%;transition:width .35s ease}
   .lvl.done{outline:2px solid #22c55e}
   .lvl.lock .overlay{position:absolute;inset:0;background:rgba(255,255,255,.75);display:grid;place-items:center;border-radius:12px}
-  /* lección */
   .choices{display:flex;gap:8px;flex-wrap:wrap}
   .choice{padding:10px 12px;border:1px solid #E5E7EB;border-radius:12px;background:#fff;cursor:pointer}
   .choice[aria-pressed="true"]{outline:2px solid var(--primary)}
   .banner{border-radius:14px;padding:12px;background:#FEE2E2;color:#991B1B;display:none}
   .banner.ok{background:#DCFCE7;color:#065F46}
   .info{padding:12px;border:1px dashed #E5E7EB;border-radius:12px;background:#FFFAF0}
-  /* vidas */
   .lives{display:flex;gap:6px;align-items:center}
   .heart{font-size:20px;opacity:.35;filter:drop-shadow(0 2px 2px rgba(0,0,0,.15));transition:opacity .2s, transform .2s}
   .heart.on{opacity:1}
   .heart.hit{animation:shake .25s ease}
   @keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-2px)}50%{transform:translateX(2px)}75%{transform:translateX(-2px)}100%{transform:translateX(0)}}
-  /* cartas/carrusel */
   .carousel{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center}
   .arrow{width:44px;height:80px;display:grid;place-items:center;border-radius:12px;border:1px solid #eee;background:#fff}
   .cards-stage{position:relative;height:220px}
@@ -77,14 +72,12 @@
   @keyframes slideIn{from{transform:translateX(12px);opacity:0}to{transform:translateX(0);opacity:1}}
   @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:scale(1);opacity:1}}
   @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-  /* shop resumida */
   .tabs{display:flex;gap:8px;overflow-x:auto}
   .tab{padding:8px 12px;border-radius:999px;background:#f3f4f6;white-space:nowrap}
   .tab.active{background:#111;color:#fff}
   .shop-grid{display:grid;grid-template-columns:1fr;gap:10px}
   @media(min-width:640px){ .shop-grid{grid-template-columns:repeat(2,1fr)} }
   .shop-card{border:1px solid #e5e7eb;border-radius:16px;padding:12px;background:#fff;display:flex;flex-direction:column;gap:8px}
-  /* toast/modal */
   .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 14px;border-radius:999px;display:none;z-index:60}
   .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;place-items:center;padding:16px;z-index:50}
   .modal .box{background:#fff;border-radius:16px;max-width:420px;width:100%;padding:16px}
@@ -102,6 +95,11 @@
     <div class="toolbar">
       <div class="pill" aria-label="Saldo del jugador">⭐ <span id="xp">0</span> · 🪙 <span id="coins">0</span> · 💎 <span id="gems">0</span> · 🔥 <span id="streak">1</span></div>
       <div id="userBadge" class="pill mini" style="display:none"></div>
+      <!-- NUEVOS: buddy + botones Perfil/Misiones -->
+      <span id="buddyBadge" class="pill mini" title="Compañero" style="display:none"></span>
+      <button class="icon-btn" id="profileBtn" aria-label="Perfil">👤</button>
+      <button class="icon-btn" id="questsBtn" aria-label="Misiones">📜</button>
+      <!-- Auth + Tienda -->
       <button class="icon-btn" id="authBtn" aria-label="Entrar/Salir">🔑</button>
       <button class="icon-btn" id="shopBtn" aria-label="Ir a tienda">🛒</button>
     </div>
@@ -223,6 +221,54 @@
 
     <section id="shopGrid" class="shop-grid" aria-live="polite" style="margin-top:10px"></section>
   </section>
+
+  <!-- PERFIL -->
+  <section id="screen-profile" class="screen">
+    <div class="row">
+      <button class="icon-btn" data-nav="skills" aria-label="Volver a habilidades">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <h2 style="margin:0">Tu perfil</h2>
+    </div>
+
+    <div class="card" style="margin-top:12px; display:flex; gap:12px; align-items:center">
+      <div id="profileAvatar" style="font-size:48px">🦫</div>
+      <div style="flex:1">
+        <div style="display:flex; gap:8px; align-items:center">
+          <strong id="profileName">Invitado</strong>
+          <span id="profileLevelPill" class="pill mini">Nivel 1</span>
+        </div>
+        <div class="mini muted">🔥 Racha: <b id="profileStreak">1</b> · 🪙 <b id="profileCoins">0</b> · 💎 <b id="profileGems">0</b></div>
+        <div class="progress" style="margin-top:8px"><span id="profileXpBar" style="width:0%"></span></div>
+        <div class="mini muted"><span id="profileXpText">0 / 100 XP</span></div>
+      </div>
+      <div id="profileBuddy" class="pill mini" style="display:none"></div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <strong>Resumen</strong>
+      <ul class="mini muted" style="margin:8px 0 0; padding-left:18px">
+        <li>Habilidades completadas: <b id="profileSkillsDone">0</b> / 45</li>
+        <li>Lecciones totales superadas: <b id="profileLessonsWon">0</b></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- MISIONES DIARIAS -->
+  <section id="screen-quests" class="screen">
+    <div class="row">
+      <button class="icon-btn" data-nav="skills" aria-label="Volver a habilidades">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <h2 style="margin:0">Misiones Diarias</h2>
+      <button id="rerollMissionsBtn" class="btn sm secondary" title="Cambiar misiones (1 vez al día)">🔄 Re-rol</button>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div id="questsList" class="shop-grid"></div>
+      <div class="mini muted" style="margin-top:8px">Se reinician cada día. Completa para ganar 🪙.</div>
+    </div>
+  </section>
 </main>
 
 <!-- Modal confirmación tienda -->
@@ -319,7 +365,7 @@ function makeLessons(title, world){
     }
   ];
 }
-const SKILLS = META.map(m => ({ ...m, lessons: makeLessons(m.title, m.world) })); // <-- una sola vez
+const SKILLS = META.map(m => ({ ...m, lessons: makeLessons(m.title, m.world) }));
 
 // ---------- Estado local + helpers ----------
 const STORAGE_KEY='nu9ve_cloud_v1';
@@ -328,7 +374,12 @@ const defaultState={
   streak:1, lastDay:null, lastDaily:null,
   equipped:{ skinId:null, habitatId:null, buddyId:null },
   skills: META.map(m=>({id:m.id, done:0, total:5, gainedXP:0})),
-  inventory:{}
+  inventory:{},
+  // NUEVO
+  lessonsWon:0,
+  missions:[],
+  lastMissionsDay:null,
+  rerolledToday:false
 };
 let state = load();
 function load(){ try{const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return structuredClone(defaultState); return Object.assign(structuredClone(defaultState), JSON.parse(raw)); }catch{ return structuredClone(defaultState); } }
@@ -359,7 +410,7 @@ async function initFirebase(){
         $('#userBadge').style.display='inline-flex';
         $('#userBadge').textContent = user.displayName ? `Hola, ${user.displayName}` : 'Conectado';
         $('#authBtn').textContent = '🚪';
-        await loadFromCloud(); // trae y fusiona
+        await loadFromCloud();
       }else{
         fb.uid = null;
         $('#userBadge').style.display='none';
@@ -415,6 +466,7 @@ async function cloudSave(){
       xp: state.xp, capyCoins: state.capyCoins, gems: state.gems, xpConverted: state.xpConverted,
       streak: state.streak, lastDay: state.lastDay, lastDaily: state.lastDaily,
       equipped: state.equipped, skills: state.skills, inventory: state.inventory,
+      lessonsWon: state.lessonsWon, missions: state.missions, lastMissionsDay: state.lastMissionsDay, rerolledToday: state.rerolledToday,
       updatedAt: serverTimestamp()
     };
     await setDoc(ref, payload, { merge:true });
@@ -423,7 +475,7 @@ async function cloudSave(){
 
 // ---------- NAV ----------
 function show(id){ $$('.screen').forEach(e=>e.classList.remove('active')); $('#backBtn').style.display=(id!=='screen-welcome')?'grid':'none'; $('#'+id).classList.add('active'); history.replaceState({},'', '#'+id); }
-$('#backBtn').onclick=()=>{ if($('#screen-lesson').classList.contains('active')) show('screen-skill'); else if($('#screen-skill').classList.contains('active')) show('screen-skills'); else if($('#screen-shop').classList.contains('active')) show('screen-skills'); else show('screen-welcome'); };
+$('#backBtn').onclick=()=>{ if($('#screen-lesson').classList.contains('active')) show('screen-skill'); else if($('#screen-skill').classList.contains('active')) show('screen-skills'); else if($('#screen-shop').classList.contains('active')) show('screen-skills'); else if($('#screen-profile').classList.contains('active')) show('screen-skills'); else if($('#screen-quests').classList.contains('active')) show('screen-skills'); else show('screen-welcome'); };
 
 // ---------- Carrusel de cartas + lista ----------
 let currentSkillIndex=0;
@@ -643,12 +695,27 @@ function renderRoleplay(ls){
   });
   area.appendChild(chat);
 }
+// MOD: finishLesson con bonus + misiones
 function finishLesson(){
   if(cur.lives<=0) return;
   const ps=state.skills[cur.skill];
+
+  // Bonus por buddy equipado (+10%)
+  let bonus = 0;
+  if(state.equipped?.buddyId){
+    bonus = Math.round(cur.accXP * 0.10);
+  }
+  const gained = cur.accXP + bonus;
+
   if(cur.lesson === ps.done && ps.done < ps.total) ps.done++;
-  ps.gainedXP += cur.accXP;
-  state.xp += cur.accXP;
+  ps.gainedXP += gained;
+  state.xp += gained;
+
+  state.lessonsWon = (state.lessonsWon||0) + 1;
+
+  addMissionProgress('xp', gained);
+  addMissionProgress('lesson_completed', 1, SKILLS[cur.skill].id);
+
   save();
   openSkill(cur.skill);
 }
@@ -700,6 +767,118 @@ function confirmPurchase(currency){
 }
 function equipItem(it){ if(!hasItem(it.id)) return; if(it.type==='skin') state.equipped.skinId=it.id; if(it.type==='habitat') state.equipped.habitatId=it.id; if(it.type==='buddy') state.equipped.buddyId=it.id; save(); }
 
+// ---------- Nivel global + Perfil ----------
+function levelFromXP(xp){
+  let lvl=1, need=100, total=0;
+  while(xp >= total+need){ total += need; lvl++; need += 150; }
+  return { level:lvl, xpInto: xp - total, xpNeed: need };
+}
+function renderProfile(){
+  const {level, xpInto, xpNeed} = levelFromXP(state.xp);
+  $('#profileLevelPill').textContent = `Nivel ${level}`;
+  $('#profileStreak').textContent = state.streak;
+  $('#profileCoins').textContent = state.capyCoins;
+  $('#profileGems').textContent = state.gems;
+  $('#profileXpText').textContent = `${xpInto} / ${xpNeed} XP`;
+  $('#profileXpBar').style.width = Math.round((xpInto/xpNeed)*100)+'%';
+
+  const userName = $('#userBadge').textContent || 'Invitado';
+  $('#profileName').textContent = userName.replace('Hola, ', '') || 'Invitado';
+
+  const done = state.skills.reduce((s,x)=>s+(x.done||0),0);
+  $('#profileSkillsDone').textContent = done;
+  $('#profileLessonsWon').textContent = state.lessonsWon||0;
+
+  const buddyId = state.equipped?.buddyId;
+  const buddyMeta = ITEMS.find(x=>x.id===buddyId);
+  if(buddyMeta){
+    $('#profileBuddy').style.display='inline-flex';
+    $('#profileBuddy').textContent = `Buddy: ${buddyMeta?.meta?.name||'Amigo'}`;
+    $('#buddyBadge').style.display='inline-flex';
+    $('#buddyBadge').textContent = buddyMeta?.meta?.emoji || '🐾';
+  }else{
+    $('#profileBuddy').style.display='none';
+    $('#buddyBadge').style.display='none';
+  }
+}
+
+// ---------- Misiones Diarias ----------
+const MISSION_POOL = [
+  { id:'xp50',   type:'xp', target:50,  rewardCoins:60,  label:'Gana 50 XP hoy' },
+  { id:'xp120',  type:'xp', target:120, rewardCoins:160, label:'Gana 120 XP hoy' },
+  { id:'less2',  type:'lessons', target:2, rewardCoins:120, label:'Completa 2 lecciones hoy' },
+  { id:'less3',  type:'lessons', target:3, rewardCoins:180, label:'Completa 3 lecciones hoy' },
+  ...META.slice(0,5).map(m => ({
+    id:`${m.id}_1`, type:'skill_lessons', skillId:m.id,
+    target:1, rewardCoins:90, label:`Juega 1 lección de ${m.title}`
+  }))
+];
+function rollMissionsIfNeeded(force=false){
+  const today = todayKey();
+  if(!force && state.lastMissionsDay === today && state.missions?.length) return;
+  const pool = [...MISSION_POOL];
+  const pick = [];
+  for(let i=0;i<3;i++){
+    const idx = Math.floor(Math.random()*pool.length);
+    pick.push(pool.splice(idx,1)[0]);
+  }
+  state.missions = pick.map(x=>({ ...x, progress:0, done:false, claimed:false }));
+  state.lastMissionsDay = today;
+  state.rerolledToday = false;
+  save();
+}
+function renderMissions(){
+  rollMissionsIfNeeded();
+  const wrap = $('#questsList');
+  wrap.innerHTML='';
+  state.missions.forEach((m,idx)=>{
+    const pct = Math.min(100, Math.round((m.progress / m.target)*100));
+    const card = document.createElement('article');
+    card.className='shop-card';
+    card.innerHTML = `
+      <div class="row" style="justify-content:flex-start;gap:10px">
+        <div class="text-2xl">📜</div>
+        <div style="flex:1">
+          <div class="font-semibold">${m.label}</div>
+          <div class="mini muted">Recompensa: 🪙 ${m.rewardCoins}</div>
+          <div class="progress" style="margin-top:6px"><span style="width:${pct}%"></span></div>
+          <div class="mini">${m.progress}/${m.target}</div>
+        </div>
+        ${m.done && !m.claimed
+          ? `<button class="btn sm" data-claim="${idx}">Reclamar</button>`
+          : m.claimed
+            ? `<span class="pill mini">Reclamada</span>`
+            : `<span class="pill mini">En curso</span>`}
+      </div>
+    `;
+    wrap.appendChild(card);
+  });
+  wrap.querySelectorAll('[data-claim]').forEach(b=>{
+    b.onclick=()=>{
+      const i = Number(b.getAttribute('data-claim'));
+      const m = state.missions[i];
+      if(m.done && !m.claimed){
+        state.capyCoins += m.rewardCoins||0;
+        m.claimed = true;
+        save(); renderBalances(); renderMissions(); toast('Recompensa reclamada');
+      }
+    };
+  });
+}
+function addMissionProgress(kind, amount=1, skillId){
+  rollMissionsIfNeeded();
+  let changed=false;
+  state.missions.forEach(m=>{
+    if(m.done) return;
+    if(m.type==='xp' && kind==='xp'){ m.progress += amount; }
+    if(m.type==='lessons' && kind==='lesson_completed'){ m.progress += 1; }
+    if(m.type==='skill_lessons' && kind==='lesson_completed' && m.skillId===skillId){ m.progress += 1; }
+    if(m.progress >= m.target){ m.progress = m.target; m.done = true; }
+    changed=true;
+  });
+  if(changed){ save(); }
+}
+
 // ---------- Eventos UI / preparar pantalla inicial ----------
 function renderSkillsScreen(){ renderBalances(); renderCarousel(); renderSkillsGrid(); }
 $('#btnStart').onclick=()=>{ renderSkillsScreen(); show('screen-skills'); };
@@ -710,10 +889,25 @@ $('#btnConvert').onclick=()=>{ const minted=convertXp(0.1,9999); renderBalances(
 $('#btnReset').onclick=()=>{ if(confirm('¿Reiniciar todo?')){ state=structuredClone(defaultState); save(); renderSkillsScreen(); } };
 $('#btnGoShop').onclick=()=>renderShop();
 $('#shopBtn').onclick=()=>renderShop();
+
+// NUEVOS botones
+$('#profileBtn').onclick=()=>{ renderBalances(); renderProfile(); show('screen-profile'); };
+$('#questsBtn').onclick=()=>{ renderBalances(); renderMissions(); show('screen-quests'); };
+$('#rerollMissionsBtn').onclick=()=>{
+  const today=todayKey();
+  if(state.rerolledToday && state.lastMissionsDay===today){ return toast('Ya usaste el re-rol hoy'); }
+  state.rerolledToday = true;
+  rollMissionsIfNeeded(true);
+  renderMissions();
+  toast('Misiones actualizadas');
+};
+
 renderBalances(); renderSkillsScreen();
 if(location.hash==='#skills') show('screen-skills');
 if(location.hash==='#skill') show('screen-skill');
 if(location.hash==='#shop') show('screen-shop');
+if(location.hash==='#profile') show('screen-profile');
+if(location.hash==='#quests') show('screen-quests');
 </script>
 </body>
 </html>
