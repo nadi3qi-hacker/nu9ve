@@ -1,976 +1,522 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>Nu9ve — App + Firebase (Next/Public)</title>
-<style>
-  /* --- ROADMAP: niveles bloqueados con nube --- */
-.lvl.lock .overlay.cloud{
-  position:absolute; inset:0; display:grid; place-items:center; border-radius:12px;
-  background: rgba(255,255,255,.75);
-}
-.lvl.lock .overlay.cloud::after{
-  content:"";
-  width:56px; height:56px;
-  background: url('/assets/ui/cloud.png') center/contain no-repeat;
-  opacity:.9;
-}
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Nu9ve — Bienvenida</title>
+  <style>
+    :root{
+      --ink:#1F2937;
+      --muted:#6B7280;
+      --primary:#F59E0B;
+      --radius:16px;
+      --shadow:0 8px 24px rgba(0,0,0,.12);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0}
+    body{
+      font-family:system-ui,Segoe UI,Roboto,Inter,sans-serif;
+      color:var(--ink);
+    }
 
-/* --- Nodo visual para el número del nivel --- */
-.lvl .badge .b{
-  background: transparent !important;
-  border: 0;
-  width: 28px; height: 28px; border-radius: 999px;
-  background: url('/assets/ui/node.png') center/contain no-repeat;
-  color:#111; font-weight:800;
-}
+    .screen{display:none;min-height:100vh;padding:16px}
+    .screen.active{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;animation:fadeIn .5s ease}
+    
+    .card{
+      background:rgba(255,255,255,0.7);
+      backdrop-filter:blur(12px);
+      border-radius:var(--radius);
+      padding:24px;
+      box-shadow:var(--shadow);
+      max-width:420px;
+      margin:auto;
+    }
+    .btn{
+      appearance:none;
+      border:0;
+      border-radius:12px;
+      padding:12px 18px;
+      font-weight:600;
+      cursor:pointer;
+      background:#111;
+      color:#fff;
+      transition:transform .06s,filter .2s ease;
+    }
+    .btn:active{transform:scale(.96)}
+    .btn.primary{background:linear-gradient(180deg,#F7B647,#F59E0B)}
+    .btn.secondary{background:#eee;color:#111}
+    
+    /* ===== Carrusel habilidades ===== */
+    .carousel{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;width:100%;max-width:500px;margin-top:20px}
+    .arrow{width:44px;height:80px;display:grid;place-items:center;border-radius:12px;background:rgba(255,255,255,0.65);cursor:pointer;user-select:none;font-size:20px}
+    .arrow:hover{background:rgba(255,255,255,0.85)}
 
-/* --- “Hero” con fondo del mundo arriba del roadmap --- */
-#skillHero{
-  height:120px; border-radius:16px; margin:12px 0;
-  background:#eee center/cover no-repeat;
+    .card-skill{
+      border-radius:18px;
+      padding:20px;
+      background:rgba(255,255,255,0.7);
+      backdrop-filter:blur(10px);
+      box-shadow:var(--shadow);
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      min-height:200px;
+      animation:slideIn .3s ease;
+    }
+    .rarity{font-size:13px;color:var(--muted);text-align:left}
+    .skill-header{display:flex;align-items:center;gap:12px}
+    .skill-header .letter{font-size:32px;font-weight:800}
+    .muted{color:var(--muted);font-size:14px}
+    .row{display:flex;gap:8px;justify-content:space-between;margin-top:auto}
+
+    @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+    /* ===== Roadmap ===== */
+.path{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:14px;
+  margin-top:20px;
+  width:100%;
+  max-width:700px;
+}
+.lvl{
+  position:relative;
+  background:rgba(255,255,255,0.7);
+  backdrop-filter:blur(10px);
+  border-radius:14px;
   box-shadow:var(--shadow);
+  padding:12px;
+  text-align:center;
+  cursor:pointer;
+  transition:.2s;
 }
+.lvl:hover{transform:translateY(-3px)}
+.lvl.done{outline:2px solid #22c55e}
+.lvl.lock{pointer-events:none}
+.lvl.lock::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:rgba(255,255,255,0.75) url('/assets/ui/cloud.png') center/60px no-repeat;
+  border-radius:14px;
+}
+/* ===== Pantalla lección ===== */
+.lesson-card{
+  background:rgba(255,255,255,0.7);
+  backdrop-filter:blur(10px);
+  border-radius:16px;
+  box-shadow:var(--shadow);
+  padding:16px;
+  width:min(820px, 100%);
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.lesson-top{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.badge{border-radius:999px;padding:6px 10px;background:#fff9;border:1px solid #eee;font-size:12px}
+.choices{display:flex;gap:8px;flex-wrap:wrap}
+.choice{padding:10px 12px;border:1px solid #E5E7EB;border-radius:12px;background:#fff;cursor:pointer}
+.choice[aria-pressed="true"]{outline:2px solid var(--primary)}
+.feedback{display:none;border-radius:12px;padding:10px}
+.feedback.ok{display:block;background:#DCFCE7;color:#065F46}
+.feedback.bad{display:block;background:#FEE2E2;color:#991B1B}
+.video-wrap{
+  position:relative; width:100%; padding-top:56.25%;
+  border-radius:14px; overflow:hidden; background:#000;
+}
+.video-wrap iframe, .video-wrap video{position:absolute; inset:0; width:100%; height:100%}
 
-  :root{--bg:#F7EFE3;--bg-2:#FFF9F1;--ink:#1F2937;--muted:#6B7280;--card:#FFFFFF;--primary:#F59E0B;--ok:#10B981;--danger:#EF4444;--radius:16px;--shadow:0 8px 24px rgba(0,0,0,.08)}
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif;color:var(--ink);background:linear-gradient(180deg,var(--bg),var(--bg-2))}
-  .container{max-width:560px;margin:0 auto;padding:16px}
-  header.appbar{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.7);backdrop-filter:blur(8px);border-bottom:1px solid #eee}
-  .row{display:flex;gap:12px;align-items:center;justify-content:space-between}
-  .brand{font-weight:800}
-  .pill{font-size:12px;background:#FFF3E5;padding:6px 10px;border-radius:999px;color:#92400E;display:inline-flex;gap:6px;align-items:center}
-  .screen{display:none;min-height:calc(100dvh - 56px);padding:16px}
-  .screen.active{display:block;animation:fadeIn .25s ease}
-  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}
-  .muted{color:var(--muted)}
-  .btn{appearance:none;border:0;border-radius:12px;padding:12px 14px;font-weight:600;cursor:pointer;background:#111;color:#fff;transition:transform .06s}
-  .btn:active{transform:scale(.98)}
-  .btn.primary{background:var(--primary)}
-  .btn.secondary{background:#EFE7DA;color:#111}
-  .btn.link{background:transparent;color:var(--primary);padding:0}
-  .btn.sm{padding:8px 10px;font-size:12px;border-radius:10px}
-  .mini{font-size:12px}
-  .icon-btn{width:40px;height:40px;display:grid;place-items:center;border-radius:10px;border:1px solid #eee;background:#fff;transition:transform .06s}
-  .icon-btn:active{transform:scale(.95)}
-  .toolbar{display:flex;gap:8px;align-items:center}
-  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-  .skill-card{display:flex;flex-direction:column;gap:8px;align-items:flex-start;min-height:120px}
-  .dot{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-weight:800;color:#fff}
-  .progress{height:8px;background:#EEE7DD;border-radius:999px;overflow:hidden;width:100%}
-  .progress > span{display:block;height:100%;background:var(--primary);width:0%;transition:width .35s ease}
-  .path{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:10px}
-  .lvl{position:relative;background:#fff;border:1px solid #E5E7EB;border-radius:12px;min-height:84px;padding:10px;display:flex;flex-direction:column;gap:6px;animation:pop .25s ease}
-  .lvl .badge{display:flex;align-items:center;gap:6px}
-  .lvl .badge .b{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:#fff;font-weight:700}
-  .lvl .p{height:6px;background:#EEE7DD;border-radius:999px;overflow:hidden}
-  .lvl .p span{display:block;height:100%;background:var(--primary);width:0%;transition:width .35s ease}
-  .lvl.done{outline:2px solid #22c55e}
-  .lvl.lock .overlay{position:absolute;inset:0;background:rgba(255,255,255,.75);display:grid;place-items:center;border-radius:12px}
-  .choices{display:flex;gap:8px;flex-wrap:wrap}
-  .choice{padding:10px 12px;border:1px solid #E5E7EB;border-radius:12px;background:#fff;cursor:pointer}
-  .choice[aria-pressed="true"]{outline:2px solid var(--primary)}
-  .banner{border-radius:14px;padding:12px;background:#FEE2E2;color:#991B1B;display:none}
-  .banner.ok{background:#DCFCE7;color:#065F46}
-  .info{padding:12px;border:1px dashed #E5E7EB;border-radius:12px;background:#FFFAF0}
-  .lives{display:flex;gap:6px;align-items:center}
-  .heart{font-size:20px;opacity:.35;filter:drop-shadow(0 2px 2px rgba(0,0,0,.15));transition:opacity .2s, transform .2s}
-  .heart.on{opacity:1}
-  .heart.hit{animation:shake .25s ease}
-  @keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-2px)}50%{transform:translateX(2px)}75%{transform:translateX(-2px)}100%{transform:translateX(0)}}
-  .carousel{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center}
-  .arrow{width:44px;height:80px;display:grid;place-items:center;border-radius:12px;border:1px solid #eee;background:#fff}
-  .cards-stage{position:relative;height:220px}
-  .card-capy{
-    position:absolute;inset:0;margin:auto;width:min(100%,340px);height:220px;border-radius:18px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:var(--shadow);border:1px solid rgba(0,0,0,.06);
-    background: radial-gradient(circle at 20% 30%, rgba(255,255,255,.7), rgba(255,255,255,.4) 40%, rgba(255,255,255,0) 60%),
-                linear-gradient(120deg, #ffd7a1, #ffe9d0, #d6eaff, #ffd6ef);
-    background-size: 200% 200%;
-    animation: holo 8s linear infinite;
-  }
-  .card-capy.slide{animation: slideIn .25s ease, holo 8s linear infinite}
-  .rarity{font-size:12px;border-radius:999px;padding:4px 8px;background:#fff8;backdrop-filter:blur(2px)}
-  .countDots{display:flex;gap:4px;justify-content:center;margin-top:10px}
-  .dotc{width:8px;height:8px;border-radius:999px;background:#e5e7eb}
-  .dotc.on{background:#111}
-  .indexLabel{text-align:center;margin-top:6px;font-size:12px;color:#6b7280}
-  @keyframes holo{0%{background-position:0% 0%}50%{background-position:100% 100%}100%{background-position:0% 0%}}
-  @keyframes slideIn{from{transform:translateX(12px);opacity:0}to{transform:translateX(0);opacity:1}}
-  @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:scale(1);opacity:1}}
-  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-  .tabs{display:flex;gap:8px;overflow-x:auto}
-  .tab{padding:8px 12px;border-radius:999px;background:#f3f4f6;white-space:nowrap}
-  .tab.active{background:#111;color:#fff}
-  .shop-grid{display:grid;grid-template-columns:1fr;gap:10px}
-  @media(min-width:640px){ .shop-grid{grid-template-columns:repeat(2,1fr)} }
-  .shop-card{border:1px solid #e5e7eb;border-radius:16px;padding:12px;background:#fff;display:flex;flex-direction:column;gap:8px}
-  .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 14px;border-radius:999px;display:none;z-index:60}
-  .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;place-items:center;padding:16px;z-index:50}
-  .modal .box{background:#fff;border-radius:16px;max-width:420px;width:100%;padding:16px}
-</style>
+
+  </style>
 </head>
 <body>
-<header class="appbar">
-  <div class="container row">
-    <div class="toolbar">
-      <button class="icon-btn" id="backBtn" aria-label="Volver" style="display:none">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="brand">Nu9ve</div>
+  <!-- ======================= PANTALLA BIENVENIDA ======================= -->
+  <section id="screen-welcome" class="screen active" style="background:url('/assets/ui/bg_welcome.png') center/cover no-repeat fixed;">
+    <div class="card">
+      <img src="/assets/capy/avatar.png" alt="Capy" width="72" height="72" style="border-radius:12px;margin-bottom:12px" onerror="this.outerHTML='🦫'">
+      <h2>¡Bienvenido a <b>Nu9ve</b>!</h2>
+      <p class="muted">Entrena tus <b>habilidades blandas</b> en un viaje con capibaras.  
+      Inicia sesión para guardar tu progreso.</p>
+      <div style="margin-top:14px;display:flex;gap:10px;justify-content:center">
+        <button id="btnGoogle" class="btn primary">🔑 Iniciar con Google</button>
+        <button id="btnGuest" class="btn secondary">Invitado</button>
+      </div>
     </div>
-    <div class="toolbar">
-      <div class="pill" aria-label="Saldo del jugador">⭐ <span id="xp">0</span> · 🪙 <span id="coins">0</span> · 💎 <span id="gems">0</span> · 🔥 <span id="streak">1</span></div>
-      <div id="userBadge" class="pill mini" style="display:none"></div>
-      <!-- NUEVOS: buddy + botones Perfil/Misiones -->
-      <span id="buddyBadge" class="pill mini" title="Compañero" style="display:none"></span>
-      <button class="icon-btn" id="profileBtn" aria-label="Perfil">👤</button>
-      <button class="icon-btn" id="questsBtn" aria-label="Misiones">📜</button>
-      <!-- Auth + Tienda -->
-      <button class="icon-btn" id="authBtn" aria-label="Entrar/Salir">🔑</button>
-      <button class="icon-btn" id="shopBtn" aria-label="Ir a tienda">🛒</button>
+  </section>
+
+  <!-- ======================= PANTALLA SELECCIÓN HABILIDADES (Carrusel) ======================= -->
+  <section id="screen-skills" class="screen" style="background:url('/assets/ui/bg_skills.png') center/cover no-repeat fixed;">
+    <h2>Elige tu carta</h2>
+    <div class="carousel">
+      <div id="arrowLeft" class="arrow">◀</div>
+      <div id="skillCard" class="card-skill"></div>
+      <div id="arrowRight" class="arrow">▶</div>
+    </div>
+    <div style="margin-top:14px" class="muted"><span id="indexNow">1</span> / <span id="indexTotal">9</span> habilidades</div>
+    <button id="btnBackWelcome" class="btn secondary" style="margin-top:20px">⬅ Volver</button>
+   
+
+  </section>
+ <!-- ======================= PANTALLA ROADMAP (Parte 3) ======================= -->
+<section id="screen-roadmap" class="screen">
+  <button id="btnBackSkills" class="btn secondary" style="align-self:flex-start">⬅ Volver</button>
+  <h2 id="roadmapTitle">Habilidad</h2>
+  <div id="levelsPath" class="path"></div>
+</section>
+  <!-- ======================= PANTALLA LECCIÓN (Parte 4) ======================= -->
+<section id="screen-lesson" class="screen">
+  <div class="lesson-card">
+    <div class="lesson-top">
+      <button id="btnBackRoadmap" class="btn secondary">⬅ Volver</button>
+      <div class="badge" id="lessonMeta">Tipo</div>
+    </div>
+
+    <h2 id="lessonTitle" style="margin:6px 0">Lección</h2>
+    <p id="lessonNarrative" class="muted" style="margin:0"></p>
+
+    <div id="lessonBody"></div>
+
+    <div class="feedback" id="lessonFeedback"></div>
+
+    <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end">
+      <button id="btnHint" class="btn secondary">💡 Pista</button>
+      <button id="btnNextLesson" class="btn primary" disabled>Siguiente</button>
     </div>
   </div>
-</header>
-
-<main class="container">
-  <!-- BIENVENIDA -->
-  <section id="screen-welcome" class="screen active">
-    <div class="card" style="display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center">
-      <div style="line-height:1">
-  <img src="/assets/capy/avatar.png" alt="Capy" width="64" height="64" style="border-radius:12px"/>
-</div>
-
-      <h2 style="margin:0">¡Hola! Soy <b>Capy</b>, tu guía</h2>
-      <p class="muted" style="margin:0">Elige tus habilidades como <b>cartas</b>, juega con <b>vidas</b> ❤️ y usa <b>pistas</b> 💡. Ahora sincroniza con <b>Firebase</b>.</p>
-      <div class="row" style="gap:8px">
-        <button id="btnStart" class="btn primary">Comenzar</button>
-        <button id="btnGoShop" class="btn secondary">Tienda</button>
-      </div>
-      <div class="mini muted">Progreso local + copia en Firestore cuando inicies sesión.</div>
-    </div>
-  </section>
-
-  <!-- SELECCIÓN CARTAS -->
-  <section id="screen-skills" class="screen">
-    <div class="row">
-      <h2 style="margin:0">Elige tu carta</h2>
-      <div class="toolbar">
-        <button id="btnDaily" class="btn sm secondary" aria-label="Reclamar cofre diario">🎁 Cofre diario</button>
-        <button id="btnReset" class="btn link mini">Reiniciar</button>
-      </div>
-    </div>
-
-    <div class="carousel" style="margin-top:10px">
-      <button class="arrow" id="leftArrow" aria-label="Anterior">◀</button>
-      <div class="cards-stage">
-        <div id="skillCard" class="card-capy slide" role="region" aria-live="polite"></div>
-      </div>
-      <button class="arrow" id="rightArrow" aria-label="Siguiente">▶</button>
-    </div>
-    <div id="dots" class="countDots" aria-hidden="true"></div>
-    <div class="indexLabel"><span id="indexNow">1</span> / <span id="indexTotal">9</span> habilidades</div>
-
-    <div class="row" style="margin-top:10px">
-      <button id="btnEnterSkill" class="btn primary" aria-label="Entrar a la habilidad seleccionada">Entrar</button>
-      <button id="btnViewGrid" class="btn secondary">Ver lista</button>
-    </div>
-
-    <div id="skillsGridWrap" class="card" style="margin-top:12px;display:none">
-      <div class="mini muted">Vista de lista</div>
-      <div id="skillsGrid" class="grid" style="margin-top:8px"></div>
-    </div>
-  </section>
-
-  <!-- MAPA 5 NIVELES -->
-  <section id="screen-skill" class="screen">
-    <div class="row">
-      
-      <button class="icon-btn" data-nav="skills" aria-label="Volver a habilidades">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <h2 id="skillTitle" style="margin:0">Habilidad</h2>
-      <span class="pill mini" id="skillWorld">Mundo</span>
-      <div class="pill mini" id="equipView" style="margin-left:auto;display:none"></div>
-    </div>
-
-    <div id="skillHero" aria-hidden="true"></div>
+</section>
 
 
-    <div class="card" style="margin-top:12px">
-      <div class="row">
-        <div class="mini muted">Completa 5 niveles. Fallas restan ❤️.</div>
-        <div class="mini">XP aquí: <b id="skillXP">0</b></div>
-      </div>
-      <div id="levelsPath" class="path"></div>
-    </div>
-  </section>
+  <!-- ======================= SCRIPTS ======================= -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 
-  <!-- LECCIÓN -->
-  <section id="screen-lesson" class="screen">
-    <div class="row">
-      <button class="icon-btn" data-nav="skill" aria-label="Volver a la habilidad">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <h2 id="lessonTitle" style="margin:0">Lección</h2>
-      <div class="lives" title="Vidas">
-        <span class="heart on">❤️</span><span class="heart on">❤️</span><span class="heart on">❤️</span>
-      </div>
-      <span class="pill mini" id="lessonMeta"></span>
-    </div>
-    <article class="card" style="margin-top:12px">
-      <div id="lessonIntro" class="info" style="display:none"></div>
-      <p class="muted" id="lessonNarrative" style="margin:8px 0 0"></p>
-      <div id="questionArea" class="stack"></div>
-      <div id="lessonFeedback" class="banner" role="status" aria-live="polite"></div>
-      <div class="row" style="margin-top:10px">
-        <button id="hintBtn" class="btn secondary" aria-label="Mostrar pista">💡 Pista</button>
-        <div style="flex:1"></div>
-        <button class="btn secondary" data-nav="skill">Salir</button>
-        <button id="btnNext" class="btn primary" disabled>Siguiente</button>
-      </div>
-    </article>
-  </section>
-
-  <!-- TIENDA -->
-  <section id="screen-shop" class="screen">
-    <div class="row">
-      <div class="toolbar">
-        <button class="icon-btn" data-nav="skills" aria-label="Volver a habilidades">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-        <h2 style="margin:0">Tienda Capy</h2>
-      </div>
-      <button id="btnConvert" class="btn sm" aria-label="Convertir XP a monedas">Convertir XP → 🪙</button>
-    </div>
-
-    <nav class="tabs" aria-label="Categorías" style="margin-top:10px">
-      <button class="tab active" data-tab="featured">Destacados</button>
-      <button class="tab" data-tab="skin">Skins</button>
-      <button class="tab" data-tab="habitat">Hábitats</button>
-      <button class="tab" data-tab="buddy">Compañeros</button>
-      <button class="tab" data-tab="booster">Boosters</button>
-      <button class="tab" data-tab="chest">Cofres</button>
-    </nav>
-
-    <section id="shopGrid" class="shop-grid" aria-live="polite" style="margin-top:10px"></section>
-  </section>
-
-  <!-- PERFIL -->
-  <section id="screen-profile" class="screen">
-    <div class="row">
-      <button class="icon-btn" data-nav="skills" aria-label="Volver a habilidades">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <h2 style="margin:0">Tu perfil</h2>
-    </div>
-
-    <div class="card" style="margin-top:12px; display:flex; gap:12px; align-items:center">
-      <div id="profileAvatar" style="font-size:48px">🦫</div>
-      <div style="flex:1">
-        <div style="display:flex; gap:8px; align-items:center">
-          <strong id="profileName">Invitado</strong>
-          <span id="profileLevelPill" class="pill mini">Nivel 1</span>
-        </div>
-        <div class="mini muted">🔥 Racha: <b id="profileStreak">1</b> · 🪙 <b id="profileCoins">0</b> · 💎 <b id="profileGems">0</b></div>
-        <div class="progress" style="margin-top:8px"><span id="profileXpBar" style="width:0%"></span></div>
-        <div class="mini muted"><span id="profileXpText">0 / 100 XP</span></div>
-      </div>
-      <div id="profileBuddy" class="pill mini" style="display:none"></div>
-    </div>
-
-    <div class="card" style="margin-top:12px">
-      <strong>Resumen</strong>
-      <ul class="mini muted" style="margin:8px 0 0; padding-left:18px">
-        <li>Habilidades completadas: <b id="profileSkillsDone">0</b> / 45</li>
-        <li>Lecciones totales superadas: <b id="profileLessonsWon">0</b></li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- MISIONES DIARIAS -->
-  <section id="screen-quests" class="screen">
-    <div class="row">
-      <button class="icon-btn" data-nav="skills" aria-label="Volver a habilidades">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <h2 style="margin:0">Misiones Diarias</h2>
-      <button id="rerollMissionsBtn" class="btn sm secondary" title="Cambiar misiones (1 vez al día)">🔄 Re-rol</button>
-    </div>
-
-    <div class="card" style="margin-top:12px">
-      <div id="questsList" class="shop-grid"></div>
-      <div class="mini muted" style="margin-top:8px">Se reinician cada día. Completa para ganar 🪙.</div>
-    </div>
-  </section>
-</main>
-
-<!-- Modal confirmación tienda -->
-<div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-hidden="true">
-  <div class="box">
-    <h3 id="modalTitle" class="font-semibold text-lg">Confirmar compra</h3>
-    <p id="modalDesc" class="text-sm text-gray-600 mt-1"></p>
-    <div id="modalError" class="mt-2 rounded bg-red-50 p-2 text-sm text-red-700" role="alert" style="display:none"></div>
-    <div class="mt-4" style="display:flex;gap:8px;align-items:center">
-      <button id="btnBuyCoins" class="px-3 py-2 rounded-lg bg-yellow-500 text-white" aria-label="Comprar con monedas">🪙 0</button>
-      <button id="btnBuyGems" class="px-3 py-2 rounded-lg bg-purple-600 text-white" aria-label="Comprar con gemas" style="display:none">💎 0</button>
-      <button id="btnEquip" class="px-3 py-2 rounded-lg bg-emerald-600 text-white" style="margin-left:auto;display:none">Equipar</button>
-      <button id="btnClose" class="px-3 py-2 rounded-lg bg-gray-100" style="margin-left:auto">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<div id="toast" class="toast" role="status" aria-live="polite"></div>
-
-<!-- ======================= APP + FIREBASE (MÓDULO) ======================= -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
-import { getAnalytics, isSupported as analyticsSupported } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-analytics.js";
-import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyAJnzIndONj1ay4aBqZwWeOrndl7NE_k9s",
-  authDomain: "nu9ve-a8bbd.firebaseapp.com",
-  projectId: "nu9ve-a8bbd",
-  storageBucket: "nu9ve-a8bbd.firebasestorage.app",
-  messagingSenderId: "946729216705",
-  appId: "1:946729216705:web:28f970e0d2746cf9058240",
-  measurementId: "G-TGBCHQVZJ5"
-};
-
-const FLAGS = { events:true, dailyChest:true, convertXp:true };
-const ITEMS = [
-  { id:"skin_capy_scout", type:"skin", rarity:"common",   priceCoins:120, meta:{name:"Capy Scout", emoji:"🦫🧢"}, isFeatured:true, active:true },
-  { id:"skin_capy_diver", type:"skin", rarity:"rare",     priceGems:8,    priceCoins:0,  meta:{name:"Capy Buzo", emoji:"🦫🤿"}, isFeatured:true, active:true },
-  { id:"habitat_river",   type:"habitat", rarity:"rare",  priceCoins:300, priceGems:5, meta:{name:"Río Tranquilo", emoji:"🌊"}, active:true },
-  { id:"buddy_tucan",     type:"buddy",   rarity:"epic",  priceGems:12, priceCoins:0, meta:{name:"Tucán", emoji:"🐦"}, active:true },
-  { id:"boost_x2xp_1d",   type:"booster", rarity:"rare",  priceCoins:250, meta:{name:"XP x2 (1 día)", emoji:"⚡"}, active:true },
-  { id:"chest_wood",      type:"chest",   rarity:"common",priceCoins:150, meta:{name:"Cofre Madera", emoji:"🧰", loot:[
-      { coins:80, weight:40 }, { gems:2, weight:25 }, { itemId:"skin_capy_scout", weight:35 }
-  ]}, active:true }
-];
-// === Rutas para fondos de mundos ===
-const SPRITES = {
-  worlds: {
-    Selva: "/assets/worlds/selva.png",
-  }
-};
-
-// Aplica el fondo del mundo en el hero
-function applyWorldBg(worldName){
-  const hero = document.getElementById('skillHero');
-  const path = SPRITES.worlds[worldName];
-  if(hero){
-    if(path) hero.style.backgroundImage = `url('${path}')`;
-    else hero.style.background = '#eee';
-  }
-}
-
-
-const META = [
-  { id:'comunicacion', title:'Comunicación', color:'#F59E0B', world:'Selva' },
-  { id:'liderazgo', title:'Liderazgo', color:'#8B5CF6', world:'Montaña' },
-  { id:'equipo', title:'Trabajo en Equipo', color:'#34D399', world:'Río' },
-  { id:'empatia', title:'Empatía', color:'#F472B6', world:'Playa' },
-  { id:'tiempo', title:'Gestión del Tiempo', color:'#06B6D4', world:'Ciudad' },
-  { id:'conflictos', title:'Resolución de Conflictos', color:'#F43F5E', world:'Mercado' },
-  { id:'critico', title:'Pensamiento Crítico', color:'#A3E635', world:'Biblioteca' },
-  { id:'negociacion', title:'Negociación', color:'#FB923C', world:'Laboratorio' },
-  { id:'creatividad', title:'Creatividad', color:'#60A5FA', world:'Café' }
-];
-
-function makeLessons(title, world){
-  return [
-    { kind:'info_quiz', title:'Nivel 1', world, info:`En ${world}, Capy inicia su entrenamiento de ${title.toLowerCase()}.`,
-      narrative:`Primera misión en ${world}.`, questions:[
-        {q:'Lo mejor para empezar es…', opts:['Hablar sin parar','Observar y escuchar'], ok:1, xp:10, hint:'Observa y valida antes de responder.'},
-        {q:'Para confirmar entendí…', opts:['Parafraseo','Cambio de tema'], ok:0, xp:10, hint:'Repite con tus palabras.'}
-      ]
-    },
-    { kind:'info_quiz', title:'Nivel 2', world, info:`Reto mayor de ${title.toLowerCase()}. Objetivos claros y acuerdos.`,
-      narrative:`Segunda misión.`, questions:[
-        {q:'Un buen objetivo es…', opts:['Vago','Específico y medible'], ok:1, xp:10, hint:'Debe poder medirse.'},
-        {q:'Los acuerdos se cierran con…', opts:['Próximos pasos','Memes'], ok:0, xp:10, hint:'Define responsables y fechas.'}
-      ]
-    },
-    { kind:'multi', title:'Nivel 3', world, prompt:`Marca TODAS las correctas para ${title.toLowerCase()}.`,
-      narrative:`Escena en ${world}.`, options:['Escucha activa','Interrumpir','Pedir claridad','Atacar a la persona'], correct:[0,2], xp:20, hint:'Respeto + comprensión.'},
-    { kind:'branch', title:'Nivel 4', world, start:0, narrative:`Historia ramificada.`,
-      nodes:[
-        { text:`Capy llega a ${world}. Dos capibaras discuten. ¿Qué haces primero?`,
-          choices:[ {label:'Explorar intereses de ambos', next:1, xp:10}, {label:'Elegir bando', next:2, xp:0} ] },
-        { text:'Descubres intereses comunes. ¿Qué propones?',
-          choices:[ {label:'Opciones que satisfagan ambos', next:3, xp:10}, {label:'Que uno ceda todo', next:3, xp:0} ] },
-        { text:'La tensión sube. ¿Qué haces?',
-          choices:[ {label:'Pausa y reformular', next:3, xp:10}, {label:'Subir el tono', next:3, xp:0} ] },
-        { text:'Cierre de la misión. ¡Bien jugado!', end:true }
-      ], hint:'Busca intereses, no posiciones.'
-    },
-    { kind:'roleplay', title:'Nivel 5', world, xpPerGood:10, narrative:`Roleplay con capibara nervioso.`,
-      steps:[
-        { npc:'Estoy preocupado por la misión…', replies:[ {text:'Te entiendo, ¿qué te inquieta?', score:+1}, {text:'Relájate', score:-1} ] },
-        { npc:'No sé si tengo las habilidades.', replies:[ {text:'Practicamos juntos', score:+1}, {text:'Entonces no vengas', score:-1} ] },
-        { npc:'¿Y si fallo?', replies:[ {text:'Aprendemos y ajustamos', score:+1}, {text:'Será tu culpa', score:-1} ] }
-      ], hint:'Valida emociones y ofrece apoyo.'
-    }
-  ];
-}
-const SKILLS = META.map(m => ({ ...m, lessons: makeLessons(m.title, m.world) }));
-
-// ---------- Estado local + helpers ----------
-const STORAGE_KEY='nu9ve_cloud_v1';
-const defaultState={
-  xp:0, capyCoins:0, gems:0, xpConverted:0,
-  streak:1, lastDay:null, lastDaily:null,
-  equipped:{ skinId:null, habitatId:null, buddyId:null },
-  skills: META.map(m=>({id:m.id, done:0, total:5, gainedXP:0})),
-  inventory:{},
-  // NUEVO
-  lessonsWon:0,
-  missions:[],
-  lastMissionsDay:null,
-  rerolledToday:false
-};
-let state = load();
-function load(){ try{const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return structuredClone(defaultState); return Object.assign(structuredClone(defaultState), JSON.parse(raw)); }catch{ return structuredClone(defaultState); } }
-function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); scheduleCloudSave(); }
-
-const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
-function toast(msg){ const el=$('#toast'); el.textContent=msg; el.style.display='block'; setTimeout(()=>el.style.display='none', 1400); }
-function todayKey(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
-function updateStreak(){ const t=todayKey(); if(!state.lastDay){ state.lastDay=t; save(); return; } if(state.lastDay===t) return; const diff=Math.round((new Date(t)-new Date(state.lastDay))/86400000); state.streak = (diff===1)? state.streak+1 : 1; state.lastDay=t; save(); }
-function renderBalances(){ updateStreak(); $('#xp').textContent=state.xp; $('#coins').textContent=state.capyCoins; $('#gems').textContent=state.gems; $('#streak').textContent=state.streak; }
-function convertXp(rate=0.1, cap=9999){ const delta = Math.max(0, state.xp - state.xpConverted); const potential = Math.floor(delta*rate); const minted = Math.min(cap, potential); if(minted<=0) return 0; state.capyCoins += minted; state.xpConverted += Math.ceil(minted/rate); save(); return minted; }
-function randPickWeighted(arr){ const total=arr.reduce((s,x)=>s+(x.weight||1),0); let r=Math.random()*total; for(const it of arr){ r-= (it.weight||1); if(r<=0) return it; } return arr[arr.length-1]; }
-function openDailyChest(){ const today=todayKey(); if(state.lastDaily===today) return toast('Ya reclamaste hoy'); state.lastDaily=today; const wood=ITEMS.find(x=>x.id==='chest_wood'); const reward=randPickWeighted(wood.meta.loot); if(reward.coins) state.capyCoins+=reward.coins; if(reward.gems) state.gems+=reward.gems; if(reward.itemId){ if(!state.inventory[reward.itemId]) state.inventory[reward.itemId]={owned:true,acquiredAt:Date.now(),source:'chest'}; else state.capyCoins+=30; } save(); renderBalances(); toast('¡Recompensa recibida!'); }
-
-// ---------- Firebase init + Auth + Firestore sync ----------
-let fb = { app:null, auth:null, db:null, uid:null, analytics:false };
-initFirebase();
-
-async function initFirebase(){
-  try{
-    fb.app = initializeApp(firebaseConfig);
-    fb.auth = getAuth(fb.app);
-    fb.db = getFirestore(fb.app);
-    try{ fb.analytics = await analyticsSupported(); if(fb.analytics) getAnalytics(fb.app); }catch{}
-    onAuthStateChanged(fb.auth, async (user)=>{
-      if(user){
-        fb.uid = user.uid;
-        $('#userBadge').style.display='inline-flex';
-        $('#userBadge').textContent = user.displayName ? `Hola, ${user.displayName}` : 'Conectado';
-        $('#authBtn').textContent = '🚪';
-        await loadFromCloud();
-      }else{
-        fb.uid = null;
-        $('#userBadge').style.display='none';
-        $('#authBtn').textContent = '🔑';
-      }
-    });
-    $('#authBtn').onclick = async ()=>{
-      if(fb.uid){ await signOut(fb.auth); toast('Sesión cerrada'); }
-      else{
-        try{
-          const provider = new GoogleAuthProvider();
-          await signInWithPopup(fb.auth, provider);
-          toast('Sesión iniciada');
-        }catch(e){ toast('Login cancelado'); }
-      }
+    const firebaseConfig = {
+      apiKey: "AIzaSyAJnzIndONj1ay4aBqZwWeOrndl7NE_k9s",
+      authDomain: "nu9ve-a8bbd.firebaseapp.com",
+      projectId: "nu9ve-a8bbd",
+      storageBucket: "nu9ve-a8bbd.firebasestorage.app",
+      messagingSenderId: "946729216705",
+      appId: "1:946729216705:web:28f970e0d2746cf9058240"
     };
-  }catch(e){ console.error('Firebase init error', e); toast('No se pudo conectar a Firebase'); }
-}
-async function loadFromCloud(){
-  if(!fb.uid) return;
-  try{
-    const ref = doc(fb.db, 'users', fb.uid);
-    const snap = await getDoc(ref);
-    if(snap.exists()){
-      const cloud = snap.data();
-      const merged = structuredClone(defaultState);
-      Object.assign(merged, cloud, state);
-      merged.skills = merged.skills.map((s,i)=>{
-        const localS = state.skills[i] || s;
-        const cloudS = (cloud.skills && cloud.skills[i]) || s;
-        return {
-          id: s.id, total: 5,
-          done: Math.max(localS.done||0, cloudS.done||0),
-          gainedXP: Math.max(localS.gainedXP||0, cloudS.gainedXP||0)
-        };
+    // Fondo propio por mundo (asegúrate de subir estas imágenes)
+const WORLD_BG = {
+  "Selva": "/assets/worlds/selva.png",
+  "Montaña": "/assets/worlds/montana.png",
+  "Río": "/assets/worlds/rio.png",
+  "Playa": "/assets/worlds/playa.png",
+  "Ciudad": "/assets/worlds/ciudad.png",
+  "Mercado": "/assets/worlds/mercado.png",
+  "Biblioteca": "/assets/worlds/biblioteca.png",
+  "Laboratorio": "/assets/worlds/laboratorio.png",
+  "Café": "/assets/worlds/cafe.png",
+};
+
+// progreso por habilidad (5 niveles por curso). Inicia todo en 0.
+    const SKILLS = [
+      {title:"Comunicación", world:"Selva", color:"#F59E0B"},
+      {title:"Liderazgo", world:"Montaña", color:"#8B5CF6"},
+      {title:"Trabajo en Equipo", world:"Río", color:"#34D399"},
+      {title:"Empatía", world:"Playa", color:"#F472B6"},
+      {title:"Gestión del Tiempo", world:"Ciudad", color:"#06B6D4"},
+      {title:"Resolución de Conflictos", world:"Mercado", color:"#F43F5E"},
+      {title:"Pensamiento Crítico", world:"Biblioteca", color:"#A3E635"},
+      {title:"Negociación", world:"Laboratorio", color:"#FB923C"},
+      {title:"Creatividad", world:"Café", color:"#60A5FA"}
+    ];
+     // Construye 9 lecciones por habilidad alternando: roleplay -> quiz -> video -> ...
+function buildLessonsFor(skillTitle, world){
+  const lessons = [];
+  const youtubeIds = ["dQw4w9WgXcQ","M7lc1UVf-VE","ysz5S6PUM-U"]; // placeholder; cambia por tus IDs
+  for(let i=0;i<9;i++){
+    const n = i+1;
+    const t = i%3; // 0 roleplay, 1 quiz, 2 video
+    if(t===0){
+      lessons.push({
+        kind:"roleplay",
+        title:`${skillTitle} • Roleplay ${n}`,
+        world,
+        narrative:`Escena ${n} en ${world}. Practica ${skillTitle.toLowerCase()}.`,
+        hint:"Valida emociones y pregunta abierto.",
+        xpPerGood:10,
+        steps:[
+          { npc:"Capy: Me preocupa la misión.", replies:[
+            {text:"Te entiendo, ¿qué te preocupa?", score:+1},
+            {text:"No exageres.", score:-1}
+          ]},
+          { npc:"Capy: No sé si seré capaz.", replies:[
+            {text:"Veámoslo juntos, ¿qué necesitarías?", score:+1},
+            {text:"Entonces no lo hagas.", score:-1}
+          ]}
+        ]
       });
-      state = merged;
-      save();
-      renderBalances(); renderSkillsScreen();
-    }else{
-      await setDoc(ref, { ...state, createdAt: serverTimestamp() });
+    } else if(t===1){
+      lessons.push({
+        kind:"quiz",
+        title:`${skillTitle} • Quiz ${n}`,
+        world,
+        narrative:`Pregunta clave de ${skillTitle.toLowerCase()}.`,
+        hint:"Piensa en objetivos claros y respeto.",
+        q:`¿Qué opción favorece ${skillTitle.toLowerCase()}?`,
+        opts:["Interrumpir","Escucha activa"],
+        ok:1,
+        xp:15
+      });
+    } else {
+      lessons.push({
+        kind:"video",
+        title:`${skillTitle} • Video ${n}`,
+        world,
+        narrative:`Mira este breve video sobre ${skillTitle.toLowerCase()} en ${world}.`,
+        hint:"Anota 2 aprendizajes.",
+        // Usa YouTube (iframe) o un .mp4 en /public/videos/
+        youtubeId: youtubeIds[i%youtubeIds.length], // cambia por los tuyos
+        xp:10
+      });
     }
-  }catch(e){ console.warn('loadFromCloud error', e); }
-}
-let cloudTimer=null; let cloudPending=false;
-function scheduleCloudSave(){ cloudPending = true; clearTimeout(cloudTimer); cloudTimer = setTimeout(cloudSave, 800); }
-async function cloudSave(){
-  if(!fb.uid || !cloudPending) return;
-  cloudPending = false;
-  try{
-    const ref = doc(fb.db, 'users', fb.uid);
-    const payload = {
-      xp: state.xp, capyCoins: state.capyCoins, gems: state.gems, xpConverted: state.xpConverted,
-      streak: state.streak, lastDay: state.lastDay, lastDaily: state.lastDaily,
-      equipped: state.equipped, skills: state.skills, inventory: state.inventory,
-      lessonsWon: state.lessonsWon, missions: state.missions, lastMissionsDay: state.lastMissionsDay, rerolledToday: state.rerolledToday,
-      updatedAt: serverTimestamp()
-    };
-    await setDoc(ref, payload, { merge:true });
-  }catch(e){ console.warn('cloudSave error', e); }
+  }
+  return lessons;
 }
 
-// ---------- NAV ----------
-function show(id){ $$('.screen').forEach(e=>e.classList.remove('active')); $('#backBtn').style.display=(id!=='screen-welcome')?'grid':'none'; $('#'+id).classList.add('active'); history.replaceState({},'', '#'+id); }
-$('#backBtn').onclick=()=>{ if($('#screen-lesson').classList.contains('active')) show('screen-skill'); else if($('#screen-skill').classList.contains('active')) show('screen-skills'); else if($('#screen-shop').classList.contains('active')) show('screen-skills'); else if($('#screen-profile').classList.contains('active')) show('screen-skills'); else if($('#screen-quests').classList.contains('active')) show('screen-skills'); else show('screen-welcome'); };
+// Mapa de lecciones por índice de habilidad (se genera desde SKILLS)
+const LESSONS = SKILLS.map(sk => buildLessonsFor(sk.title, sk.world));
+const PROGRESS = new Array(SKILLS.length).fill(0);
 
-// ---------- Carrusel de cartas + lista ----------
-let currentSkillIndex=0;
-function renderCarousel(){
-  const sk=SKILLS[currentSkillIndex];
-  $('#indexNow').textContent = currentSkillIndex+1;
-  $('#indexTotal').textContent = SKILLS.length;
-  const dots=$('#dots'); dots.innerHTML='';
-  SKILLS.forEach((_,i)=>{ const d=document.createElement('div'); d.className='dotc'+(i===currentSkillIndex?' on':''); dots.appendChild(d); });
-  const c = $('#skillCard');
-  c.classList.add('slide');
-  c.innerHTML = `
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const $ = (s)=>document.querySelector(s);
+
+
+    let index=0;
+
+    function show(id){
+      document.querySelectorAll(".screen").forEach(el=>el.classList.remove("active"));
+      $("#"+id).classList.add("active");
+    }
+
+  function renderCard(){
+  const sk=SKILLS[index];
+  $("#skillCard").innerHTML=`
     <div class="rarity">Carta • ${sk.world}</div>
-    <div style="display:flex;align-items:center;gap:12px">
-      <div style="font-size:40px">${sk.title[0]}</div>
+    <div class="skill-header">
+      <div class="letter">${sk.title[0]}</div>
       <div>
-        <div style="font-weight:800">${sk.title}</div>
-        <div class="mini muted">Color: <span style="display:inline-block;width:12px;height:12px;background:${sk.color};border-radius:3px;vertical-align:middle"></span></div>
+        <strong>${sk.title}</strong><br>
+        <span class="muted">Color: <span style="display:inline-block;width:12px;height:12px;background:${sk.color};border-radius:3px"></span></span>
       </div>
     </div>
     <div class="row">
-      <button class="btn sm secondary" id="cardPreview">Vista previa</button>
-      <button class="btn sm primary" id="cardEnter">Entrar</button>
+      <button id="btnPreview" class="btn secondary">Vista previa</button>
+      <button id="btnEnter" class="btn primary">Entrar</button>
     </div>
   `;
-  $('#cardPreview').onclick=()=>openSkill(currentSkillIndex);
-  $('#cardEnter').onclick=()=>openSkill(currentSkillIndex);
-  setTimeout(()=>c.classList.remove('slide'), 260);
-}
-function nextSkill(dir){ currentSkillIndex = (currentSkillIndex + dir + SKILLS.length) % SKILLS.length; renderCarousel(); }
-$('#leftArrow').onclick=()=>nextSkill(-1);
-$('#rightArrow').onclick=()=>nextSkill(+1);
-document.addEventListener('keydown', e=>{ if($('#screen-skills').classList.contains('active')){ if(e.key==='ArrowLeft') nextSkill(-1); if(e.key==='ArrowRight') nextSkill(+1); if(e.key==='Enter') openSkill(currentSkillIndex); } });
+  $("#indexNow").textContent=index+1;
+  $("#indexTotal").textContent=SKILLS.length;
 
-function renderSkillsGrid(){
-  const g=$('#skillsGrid'); g.innerHTML='';
-  SKILLS.forEach((sk,i)=>{
-    const ps=state.skills[i];
-    const b=document.createElement('button');
-    b.type='button'; b.className='card skill-card';
-    b.innerHTML=`
-      <div class="row" style="gap:8px;justify-content:flex-start">
-        <div class="dot" style="background:${sk.color}">${sk.title[0]}</div>
-        <div><strong>${sk.title}</strong><div class="mini muted">${sk.world}</div></div>
-      </div>
-      <div class="progress"><span style="width:${Math.round(ps.done/ps.total*100)}%"></span></div>
-      <div class="mini">Niveles: ${ps.done}/${ps.total}</div>
-    `;
-    b.onclick=()=>{ currentSkillIndex=i; renderCarousel(); openSkill(i); };
-    g.appendChild(b);
-  });
-}
-
-// ---------- Skill path + Lesson engine ----------
-function openSkill(i){
-  currentSkillIndex=i;
-  const sk=SKILLS[i], ps=state.skills[i];
-
-  // ✅ aquí llamamos a la función en una línea aparte
-  applyWorldBg(sk.world);
-
-  $('#skillTitle').textContent=sk.title;
-  $('#skillWorld').textContent=sk.world;
-  $('#skillXP').textContent=ps.gainedXP;
-  const path=$('#levelsPath'); path.innerHTML='';
-  
-  for(let li=0; li<5; li++){
-    const done = li < ps.done;
-    const unlocked = li <= ps.done;
-    const lvl=document.createElement('button');
-    lvl.type='button';
-    lvl.className='lvl'+(done?' done':'')+(unlocked?'':' lock');
-    lvl.innerHTML=`
-      <div class="badge">
-        <div class="b" style="background:${sk.color}">${li+1}</div>
-        <strong>Nivel ${li+1}</strong>
-      </div>
-      <div class="p"><span style="width:${done?100:0}%"></span></div>
-      <div class="mini muted">${done?'Completado':'Por completar'}</div>
-      ${unlocked?'':'<div class="overlay cloud" title="Bloqueado"></div>'}
-    `;
-    if(unlocked) lvl.onclick=()=>startLesson(i, li);
-    path.appendChild(lvl);
-  }
-  show('screen-skill');
+  // conectar al roadmap (Parte 3)
+  $("#btnEnter").onclick = () => openRoadmap(index);
+  $("#btnPreview").onclick = () => alert("Vista previa de "+sk.title);
 }
 
 
-let cur={skill:0, lesson:0, mode:'', q:0, accXP:0, selected:null, selectedSet:new Set(), node:0, step:0, rapport:0, lives:3, hintUsed:false};
-const feedback = (ok,msg)=>{ const box=$('#lessonFeedback'); box.style.display='block'; if(ok){ box.classList.add('ok'); } else { box.classList.remove('ok'); } box.textContent=msg; };
-const hideFeedback = ()=>{ $('#lessonFeedback').style.display='none'; };
-function setLives(n){ cur.lives=n; const hearts=$$('.heart'); hearts.forEach((h,idx)=>{ h.classList.toggle('on', idx < n); }); }
-function loseLife(){
-  if(cur.lives<=0) return;
-  setLives(cur.lives-1);
-  $$('.heart')[cur.lives].classList.add('hit');
-  setTimeout(()=>$$('.heart').forEach(h=>h.classList.remove('hit')), 260);
-  if(cur.lives===0){ $('#btnNext').disabled=true; feedback(false,'Sin vidas. Reintenta o recarga 1 ❤️ por 50🪙'); const area=$('#questionArea'); const bar=document.createElement('div'); bar.style.marginTop='10px'; bar.innerHTML=`<div class="row"><button id="retryBtn" class="btn primary">Reintentar</button><button id="refillBtn" class="btn secondary">+1 vida (🪙50)</button></div>`; area.appendChild(bar); $('#retryBtn').onclick=()=>startLesson(cur.skill, cur.lesson); $('#refillBtn').onclick=()=>{ if(state.capyCoins>=50){ state.capyCoins-=50; save(); renderBalances(); setLives(1); toast('+1 vida'); bar.remove(); hideFeedback(); } else toast('Monedas insuficientes'); }; }
-}
-function startLesson(si, li){
-  cur={skill:si, lesson:li, q:0, accXP:0, selected:null, selectedSet:new Set(), node:0, step:0, rapport:0, lives:3, hintUsed:false};
-  setLives(3);
-  const sk=SKILLS[si], ls=sk.lessons[li];
-  $('#lessonTitle').textContent = `${sk.title} — ${ls.title}`;
-  $('#lessonMeta').textContent = `${ls.world || sk.world}`;
-  $('#lessonIntro').style.display='none';
-  $('#lessonNarrative').textContent = ls.narrative || '';
-  hideFeedback();
-  $('#btnNext').disabled = true;
-  $('#hintBtn').onclick = ()=>showHint(ls);
-  if(ls.kind==='info_quiz'){ cur.mode='info_quiz'; renderInfoQuizIntro(ls); }
-  else if(ls.kind==='multi'){ cur.mode='multi'; renderMulti(ls); }
-  else if(ls.kind==='branch'){ cur.mode='branch'; renderBranch(ls); }
-  else if(ls.kind==='roleplay'){ cur.mode='roleplay'; renderRoleplay(ls); }
-  show('screen-lesson');
-}
-function showHint(ls){
-  const hint = (ls.kind==='info_quiz') ? ls.questions[cur.q]?.hint
-             : (ls.kind==='multi') ? ls.hint
-             : (ls.kind==='branch' || ls.kind==='roleplay') ? ls.hint : null;
-  if(!hint){ toast('Sin pista disponible'); return; }
-  cur.hintUsed = true;
-  feedback(true, '💡 '+hint);
-}
-function renderInfoQuizIntro(ls){
-  $('#lessonIntro').style.display='block';
-  $('#lessonIntro').textContent = ls.info || 'Lee y continúa.';
-  $('#questionArea').innerHTML='';
-  $('#btnNext').textContent='Continuar';
-  $('#btnNext').disabled=false;
-  $('#btnNext').onclick=()=>{ hideFeedback(); cur.q=0; renderInfoQuizQuestion(ls); };
-}
-function renderInfoQuizQuestion(ls){
-  $('#lessonIntro').style.display='none';
-  cur.hintUsed=false;
-  const q=ls.questions[cur.q];
-  const area=$('#questionArea'); area.innerHTML='';
-  const block=document.createElement('div'); block.className='stack';
-  block.innerHTML=`<strong>Pregunta ${cur.q+1} de ${ls.questions.length}</strong><div class="muted">${q.q}</div><div class="choices"></div>`;
-  area.appendChild(block);
-  const choices=block.querySelector('.choices');
-  q.opts.forEach((txt,idx)=>{
-    const b=document.createElement('button'); b.className='choice'; b.type='button'; b.textContent=txt; b.setAttribute('aria-pressed','false');
-    b.onclick=(ev)=>{
-      choices.querySelectorAll('button').forEach(x=>x.disabled=true);
-      ev.currentTarget.setAttribute('aria-pressed','true');
-      const ok = (idx===q.ok);
-      let gained = ok ? (cur.hintUsed ? Math.floor(q.xp/2) : q.xp) : 0;
-      if(ok){ cur.accXP += gained; feedback(true, `¡Correcto! +${gained} XP`); }
-      else { feedback(false, `Ups, era: "${q.opts[q.ok]}"`); loseLife(); }
-      $('#btnNext').disabled=false;
+    $("#arrowLeft").onclick=()=>{index=(index-1+SKILLS.length)%SKILLS.length;renderCard();}
+    $("#arrowRight").onclick=()=>{index=(index+1)%SKILLS.length;renderCard();}
+
+    $("#btnGoogle").onclick = async ()=>{
+      try{
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(auth, provider);
+        show("screen-skills");
+        renderCard();
+      }catch(e){ alert("Error al iniciar sesión"); }
     };
-    choices.appendChild(b);
-  });
-  $('#btnNext').textContent = (cur.q===ls.questions.length-1)? 'Terminar' : 'Siguiente';
-  $('#btnNext').disabled=true;
-  $('#btnNext').onclick=()=>{
-    if(cur.lives<=0) return;
-    hideFeedback();
-    if(cur.q<ls.questions.length-1){ cur.q++; renderInfoQuizQuestion(ls); }
-    else finishLesson();
+   function openRoadmap(skillIndex){
+  const sk = SKILLS[skillIndex];
+  const doneCount = PROGRESS[skillIndex];
+
+  // Título y fondo del mundo
+  $("#roadmapTitle").textContent = `${sk.title} — ${sk.world}`;
+  const bg = WORLD_BG[sk.world];
+  $("#screen-roadmap").style.background = `url('${bg}') center/cover no-repeat fixed`;
+
+  // Render de 9 niveles
+  const container = $("#levelsPath");
+  container.innerHTML = "";
+  for (let i = 0; i < 9; i++) {
+    const lvl = document.createElement("div");
+    const isDone = i < doneCount;
+    const isUnlocked = i <= doneCount; // el siguiente al done está desbloqueado
+    lvl.className = "lvl" + (isDone ? " done" : "") + (isUnlocked ? "" : " lock");
+    lvl.innerHTML = `<strong>Nivel ${i+1}</strong><div class="muted">${isDone ? "Completado" : (isUnlocked ? "Disponible" : "Bloqueado")}</div>`;
+    if (isUnlocked) {
+      lvl.onclick = () => startLesson(skillIndex, i);
+    }
+    container.appendChild(lvl);
+  }
+
+  show("screen-roadmap");
+}
+
+let CUR = { skillIndex:0, levelIndex:0, lives:3, hintUsed:false, roleStep:0, quizAnswered:false };
+
+// Utilidad
+function setLessonFeedback(ok, msg){
+  const box = $("#lessonFeedback");
+  box.className = "feedback " + (ok ? "ok" : "bad");
+  box.textContent = msg;
+  box.style.display = "block";
+}
+function clearLessonFeedback(){
+  const box = $("#lessonFeedback");
+  box.style.display = "none";
+  box.textContent = "";
+  box.className = "feedback";
+}
+
+$("#btnBackRoadmap").onclick = ()=> show("screen-roadmap");
+
+function startLesson(skillIndex, levelIndex){
+  CUR = { skillIndex, levelIndex, lives:3, hintUsed:false, roleStep:0, quizAnswered:false };
+
+  const sk = SKILLS[skillIndex];
+  const ls = LESSONS[skillIndex][levelIndex];
+
+  // Fondo del mundo en pantalla de lección
+  const bg = WORLD_BG[sk.world];
+  $("#screen-lesson").style.background = `url('${bg}') center/cover no-repeat fixed`;
+
+  // Meta
+  $("#lessonTitle").textContent = `${sk.title} — Nivel ${levelIndex+1}`;
+  $("#lessonMeta").textContent = ls.kind.toUpperCase();
+  $("#lessonNarrative").textContent = ls.narrative || "";
+
+  // Limpia y pinta
+  clearLessonFeedback();
+  $("#btnNextLesson").disabled = true;
+  $("#btnHint").onclick = ()=>{
+    if(ls.hint){ setLessonFeedback(true, "💡 "+ls.hint); }
+    else { setLessonFeedback(true, "💡 Sin pista."); }
   };
+
+  // Render segun tipo
+  if(ls.kind === "roleplay") renderRoleplay(ls);
+  else if(ls.kind === "quiz") renderQuiz(ls);
+  else if(ls.kind === "video") renderVideo(ls);
+
+  show("screen-lesson");
 }
-function renderMulti(ls){
-  cur.hintUsed=false;
-  const area=$('#questionArea'); area.innerHTML='';
-  const block=document.createElement('div'); block.className='stack';
-  block.innerHTML=`<strong>Selecciona todas las correctas</strong><div class="muted">${ls.prompt||''}</div><div class="choices"></div>`;
-  area.appendChild(block);
-  const choices=block.querySelector('.choices');
-  cur.selectedSet = new Set();
-  ls.options.forEach((txt,idx)=>{
-    const b=document.createElement('button'); b.className='choice'; b.type='button'; b.textContent=txt; b.setAttribute('aria-pressed','false');
-    b.onclick=(ev)=>{ const sel = ev.currentTarget.getAttribute('aria-pressed')==='true'; ev.currentTarget.setAttribute('aria-pressed', String(!sel)); if(sel){cur.selectedSet.delete(idx);} else {cur.selectedSet.add(idx);} $('#btnNext').disabled=false; };
-    choices.appendChild(b);
-  });
-  $('#btnNext').textContent='Comprobar'; $('#btnNext').disabled=true;
-  $('#btnNext').onclick=()=>{
-    const corr = new Set(ls.correct);
-    const same = (a,b)=> a.size===b.size && [...a].every(x=>b.has(x));
-    if(same(cur.selectedSet,corr)){ let gain=(ls.xp||20); if(cur.hintUsed) gain=Math.floor(gain/2); cur.accXP+=gain; feedback(true, `¡Genial! +${gain} XP`); setTimeout(()=>{ hideFeedback(); finishLesson(); }, 600); }
-    else { feedback(false,'Hay opciones incorrectas o falta alguna.'); loseLife(); }
-  };
+
+function completeLesson(xpGain=10){
+  // solo avanza si completas el nivel actual
+  if(CUR.levelIndex === PROGRESS[CUR.skillIndex]){
+    PROGRESS[CUR.skillIndex] = Math.min(9, PROGRESS[CUR.skillIndex] + 1);
+  }
+  // podrías sumar XP global aquí si ya manejas XP
+  // state.xp += xpGain; (si tuvieras state)
+
+  // Regresa al roadmap refrescado
+  openRoadmap(CUR.skillIndex);
 }
-function renderBranch(ls){
-  cur.hintUsed=false;
-  $('#btnNext').disabled=true; $('#btnNext').textContent='Siguiente'; $('#btnNext').onclick=null;
-  const node = ls.nodes[cur.node];
-  const area=$('#questionArea'); area.innerHTML='';
-  const block=document.createElement('div'); block.className='stack';
-  block.innerHTML=`<div class="muted">${node.text}</div><div class="choices"></div>`;
-  area.appendChild(block);
-  const choices=block.querySelector('.choices');
-  (node.choices||[]).forEach(ch=>{
-    const b=document.createElement('button'); b.className='choice'; b.type='button'; b.textContent=ch.label;
-    b.onclick=()=>{ cur.accXP += (ch.xp||0); if((ch.xp||0)===0) loseLife();
-      if(typeof ch.next==='number'){ cur.node = ch.next; if(ls.nodes[cur.node]?.end){ feedback(true, `¡Historia completada! +${cur.accXP} XP`); setTimeout(()=>{ hideFeedback(); finishLesson(); }, 700); } else { renderBranch(ls); } } };
-    choices.appendChild(b);
-  });
-  if(node.end){ feedback(true, `¡Historia completada! +${cur.accXP} XP`); setTimeout(()=>{ hideFeedback(); finishLesson(); }, 700); }
-}
+
 function renderRoleplay(ls){
-  cur.hintUsed=false;
-  $('#btnNext').disabled=true; $('#btnNext').textContent='Siguiente'; $('#btnNext').onclick=null;
-  const step = ls.steps[cur.step];
-  const area=$('#questionArea'); area.innerHTML='';
-  const chat=document.createElement('div'); chat.className='stack';
-  const npc=document.createElement('div'); npc.className='info'; npc.textContent='Capy: '+step.npc; chat.appendChild(npc);
-  const choices=document.createElement('div'); choices.className='choices'; chat.appendChild(choices);
+  const body = $("#lessonBody");
+  body.innerHTML = "";
+  const step = ls.steps[CUR.roleStep];
+
+  const npc = document.createElement("div");
+  npc.className = "badge";
+  npc.textContent = "Capy: " + step.npc;
+  body.appendChild(npc);
+
+  const choices = document.createElement("div");
+  choices.className = "choices";
+  body.appendChild(choices);
+
   step.replies.forEach(r=>{
-    const b=document.createElement('button'); b.className='choice'; b.type='button'; b.textContent=r.text;
+    const b=document.createElement("button");
+    b.className="choice";
+    b.textContent=r.text;
     b.onclick=()=>{
-      cur.rapport += r.score||0; if(r.score<0) loseLife();
-      if(cur.step < ls.steps.length-1){ cur.step++; setTimeout(()=>renderRoleplay(ls), 280); }
-      else{
-        const good = Math.max(0, cur.rapport);
-        const xp = good * (ls.xpPerGood||10);
-        cur.accXP += xp;
-        feedback(true, `¡Roleplay completo! Rapport: ${cur.rapport>=0? '+'+cur.rapport : cur.rapport}. +${xp} XP`);
-        setTimeout(()=>{ hideFeedback(); finishLesson(); }, 700);
+      if(r.score>=0){
+        setLessonFeedback(true,"¡Bien! Sumas rapport.");
+      }else{
+        setLessonFeedback(false,"Mmmm, intenta empatizar más.");
+      }
+      if(CUR.roleStep < ls.steps.length-1){
+        CUR.roleStep++;
+        setTimeout(()=>{ clearLessonFeedback(); renderRoleplay(ls); }, 450);
+      }else{
+        // fin del roleplay
+        $("#btnNextLesson").disabled = false;
+        $("#btnNextLesson").onclick = ()=> completeLesson(ls.xpPerGood ? ls.xpPerGood : 10);
       }
     };
     choices.appendChild(b);
   });
-  area.appendChild(chat);
-}
-// MOD: finishLesson con bonus + misiones
-function finishLesson(){
-  if(cur.lives<=0) return;
-  const ps=state.skills[cur.skill];
-
-  // Bonus por buddy equipado (+10%)
-  let bonus = 0;
-  if(state.equipped?.buddyId){
-    bonus = Math.round(cur.accXP * 0.10);
-  }
-  const gained = cur.accXP + bonus;
-
-  if(cur.lesson === ps.done && ps.done < ps.total) ps.done++;
-  ps.gainedXP += gained;
-  state.xp += gained;
-
-  state.lessonsWon = (state.lessonsWon||0) + 1;
-
-  addMissionProgress('xp', gained);
-  addMissionProgress('lesson_completed', 1, SKILLS[cur.skill].id);
-
-  save();
-  openSkill(cur.skill);
 }
 
-// ---------- Tienda ----------
-let currentTab='featured', pendingItem=null;
-function hasItem(id){ return !!state.inventory[id]; }
-function renderShop(){ renderBalances(); renderShopGrid(); show('screen-shop'); }
-function filterItems(tab){ if(tab==='featured') return ITEMS.filter(x=>x.active && x.isFeatured); return ITEMS.filter(x=>x.active && x.type===tab); }
-function renderShopGrid(){
-  $$('.tab').forEach(b=>{ b.classList.toggle('active', b.dataset.tab===currentTab); b.onclick=()=>{ currentTab=b.dataset.tab; renderShopGrid(); }; });
-  const grid=$('#shopGrid'); grid.innerHTML='';
-  const list=filterItems(currentTab);
-  list.forEach(it=>{
-    const owned=hasItem(it.id);
-    const el=document.createElement('article'); el.className='shop-card';
-    el.innerHTML=`
-      <div class="row" style="justify-content:flex-start;gap:10px">
-        <div class="text-3xl">${it.meta?.emoji||'🦫'}</div>
-        <div><div class="font-semibold">${it.meta?.name||it.id}</div><div class="text-xs text-gray-500">${it.type} • ${it.rarity}</div></div>
-        ${owned?'<span class="pill mini" style="margin-left:auto">En inventario</span>':''}
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        ${it.priceCoins?`<button class="btn sm" data-buy="coins">🪙 ${it.priceCoins}</button>`:''}
-        ${it.priceGems?`<button class="btn sm" data-buy="gems">💎 ${it.priceGems}</button>`:''}
-      </div>
-    `;
-    el.querySelectorAll('[data-buy]').forEach(b=> b.onclick=()=>openModal(it, b.getAttribute('data-buy')));
-    grid.appendChild(el);
-  });
-}
-function openModal(it, cur){
-  pendingItem=it; $('#modalTitle').textContent='Confirmar compra'; $('#modalDesc').textContent=`¿Obtener “${it.meta?.name||it.id}”?`; $('#modalError').style.display='none';
-  const bc=$('#btnBuyCoins'), bg=$('#btnBuyGems'), be=$('#btnEquip');
-  be.style.display = (hasItem(it.id) && ['skin','habitat','buddy'].includes(it.type)) ? 'inline-flex':'none';
-  be.onclick=()=>{ equipItem(it); closeModal(); toast('Equipado'); };
-  if(it.priceCoins){ bc.style.display='inline-flex'; bc.textContent=`🪙 ${it.priceCoins}`; bc.onclick=()=>confirmPurchase('coins'); } else bc.style.display='none';
-  if(it.priceGems){ bg.style.display='inline-flex'; bg.textContent=`💎 ${it.priceGems}`; bg.onclick=()=>confirmPurchase('gems'); } else bg.style.display='none';
-  $('#modal').style.display='grid'; $('#modal').setAttribute('aria-hidden','false');
-}
-function closeModal(){ $('#modal').style.display='none'; $('#modal').setAttribute('aria-hidden','true'); pendingItem=null; }
-$('#btnClose').onclick=closeModal;
-function confirmPurchase(currency){
-  const it=pendingItem; if(!it) return;
-  if(hasItem(it.id)) return $('#modalError').style.display='block', $('#modalError').textContent='Ya lo tienes.';
-  if(currency==='coins'){ if(state.capyCoins<(it.priceCoins||0)) return $('#modalError').style.display='block', $('#modalError').textContent='Monedas insuficientes.'; state.capyCoins-=it.priceCoins||0; }
-  else { if(state.gems<(it.priceGems||0)) return $('#modalError').style.display='block', $('#modalError').textContent='Gemas insuficientes.'; state.gems-=it.priceGems||0; }
-  state.inventory[it.id]={owned:true,acquiredAt:Date.now(),source:'purchase'}; save(); renderBalances(); closeModal(); renderShopGrid(); toast('Compra realizada');
-}
-function equipItem(it){ if(!hasItem(it.id)) return; if(it.type==='skin') state.equipped.skinId=it.id; if(it.type==='habitat') state.equipped.habitatId=it.id; if(it.type==='buddy') state.equipped.buddyId=it.id; save(); }
-
-// ---------- Nivel global + Perfil ----------
-function levelFromXP(xp){
-  let lvl=1, need=100, total=0;
-  while(xp >= total+need){ total += need; lvl++; need += 150; }
-  return { level:lvl, xpInto: xp - total, xpNeed: need };
-}
-function renderProfile(){
-  const {level, xpInto, xpNeed} = levelFromXP(state.xp);
-  $('#profileLevelPill').textContent = `Nivel ${level}`;
-  $('#profileStreak').textContent = state.streak;
-  $('#profileCoins').textContent = state.capyCoins;
-  $('#profileGems').textContent = state.gems;
-  $('#profileXpText').textContent = `${xpInto} / ${xpNeed} XP`;
-  $('#profileXpBar').style.width = Math.round((xpInto/xpNeed)*100)+'%';
-
-  const av = document.getElementById('profileAvatar');
-if(av) av.innerHTML = `<img src="/assets/capy/avatar.png" alt="Capy" width="56" height="56" style="border-radius:12px" />`;
-
-
-  const userName = $('#userBadge').textContent || 'Invitado';
-  $('#profileName').textContent = userName.replace('Hola, ', '') || 'Invitado';
-
-  const done = state.skills.reduce((s,x)=>s+(x.done||0),0);
-  $('#profileSkillsDone').textContent = done;
-  $('#profileLessonsWon').textContent = state.lessonsWon||0;
-
-  const buddyId = state.equipped?.buddyId;
-  const buddyMeta = ITEMS.find(x=>x.id===buddyId);
-  if(buddyMeta){
-    $('#profileBuddy').style.display='inline-flex';
-    $('#profileBuddy').textContent = `Buddy: ${buddyMeta?.meta?.name||'Amigo'}`;
-    $('#buddyBadge').style.display='inline-flex';
-    $('#buddyBadge').textContent = buddyMeta?.meta?.emoji || '🐾';
-  }else{
-    $('#profileBuddy').style.display='none';
-    $('#buddyBadge').style.display='none';
-  }
-}
-
-// ---------- Misiones Diarias ----------
-const MISSION_POOL = [
-  { id:'xp50',   type:'xp', target:50,  rewardCoins:60,  label:'Gana 50 XP hoy' },
-  { id:'xp120',  type:'xp', target:120, rewardCoins:160, label:'Gana 120 XP hoy' },
-  { id:'less2',  type:'lessons', target:2, rewardCoins:120, label:'Completa 2 lecciones hoy' },
-  { id:'less3',  type:'lessons', target:3, rewardCoins:180, label:'Completa 3 lecciones hoy' },
-  ...META.slice(0,5).map(m => ({
-    id:`${m.id}_1`, type:'skill_lessons', skillId:m.id,
-    target:1, rewardCoins:90, label:`Juega 1 lección de ${m.title}`
-  }))
-];
-function rollMissionsIfNeeded(force=false){
-  const today = todayKey();
-  if(!force && state.lastMissionsDay === today && state.missions?.length) return;
-  const pool = [...MISSION_POOL];
-  const pick = [];
-  for(let i=0;i<3;i++){
-    const idx = Math.floor(Math.random()*pool.length);
-    pick.push(pool.splice(idx,1)[0]);
-  }
-  state.missions = pick.map(x=>({ ...x, progress:0, done:false, claimed:false }));
-  state.lastMissionsDay = today;
-  state.rerolledToday = false;
-  save();
-}
-function renderMissions(){
-  rollMissionsIfNeeded();
-  const wrap = $('#questsList');
-  wrap.innerHTML='';
-  state.missions.forEach((m,idx)=>{
-    const pct = Math.min(100, Math.round((m.progress / m.target)*100));
-    const card = document.createElement('article');
-    card.className='shop-card';
-    card.innerHTML = `
-      <div class="row" style="justify-content:flex-start;gap:10px">
-        <div class="text-2xl">📜</div>
-        <div style="flex:1">
-          <div class="font-semibold">${m.label}</div>
-          <div class="mini muted">Recompensa: 🪙 ${m.rewardCoins}</div>
-          <div class="progress" style="margin-top:6px"><span style="width:${pct}%"></span></div>
-          <div class="mini">${m.progress}/${m.target}</div>
-        </div>
-        ${m.done && !m.claimed
-          ? `<button class="btn sm" data-claim="${idx}">Reclamar</button>`
-          : m.claimed
-            ? `<span class="pill mini">Reclamada</span>`
-            : `<span class="pill mini">En curso</span>`}
-      </div>
-    `;
-    wrap.appendChild(card);
-  });
-  wrap.querySelectorAll('[data-claim]').forEach(b=>{
-    b.onclick=()=>{
-      const i = Number(b.getAttribute('data-claim'));
-      const m = state.missions[i];
-      if(m.done && !m.claimed){
-        state.capyCoins += m.rewardCoins||0;
-        m.claimed = true;
-        save(); renderBalances(); renderMissions(); toast('Recompensa reclamada');
+function renderQuiz(ls){
+  const body = $("#lessonBody");
+  body.innerHTML = `
+    <div><strong>${ls.q}</strong></div>
+    <div class="choices" id="quizChoices"></div>
+  `;
+  const wrap = $("#quizChoices");
+  ls.opts.forEach((txt, idx)=>{
+    const b = document.createElement("button");
+    b.className="choice";
+    b.textContent = txt;
+    b.setAttribute("aria-pressed","false");
+    b.onclick = ()=>{
+      if(CUR.quizAnswered) return;
+      CUR.quizAnswered = true;
+      b.setAttribute("aria-pressed","true");
+      const ok = (idx === ls.ok);
+      if(ok){
+        setLessonFeedback(true, "¡Correcto! +"+(ls.xp||15)+" XP");
+        $("#btnNextLesson").disabled = false;
+        $("#btnNextLesson").onclick = ()=> completeLesson(ls.xp||15);
+      }else{
+        setLessonFeedback(false, `Ups, era: "${ls.opts[ls.ok]}"`);
       }
     };
+    wrap.appendChild(b);
   });
 }
-function addMissionProgress(kind, amount=1, skillId){
-  rollMissionsIfNeeded();
-  let changed=false;
-  state.missions.forEach(m=>{
-    if(m.done) return;
-    if(m.type==='xp' && kind==='xp'){ m.progress += amount; }
-    if(m.type==='lessons' && kind==='lesson_completed'){ m.progress += 1; }
-    if(m.type==='skill_lessons' && kind==='lesson_completed' && m.skillId===skillId){ m.progress += 1; }
-    if(m.progress >= m.target){ m.progress = m.target; m.done = true; }
-    changed=true;
-  });
-  if(changed){ save(); }
+
+function renderVideo(ls){
+  const body = $("#lessonBody");
+  let media = "";
+  if(ls.youtubeId){
+    media = `
+      <div class="video-wrap">
+        <iframe src="https://www.youtube.com/embed/${ls.youtubeId}" frameborder="0" allowfullscreen></iframe>
+      </div>`;
+  }else if(ls.src){
+    media = `
+      <div class="video-wrap">
+        <video src="${ls.src}" controls></video>
+      </div>`;
+  }else{
+    media = `<div class="video-wrap" style="display:grid;place-items:center;color:#fff">Sin video</div>`;
+  }
+  body.innerHTML = media + `<div class="muted">Cuando termines, pulsa “Siguiente”.</div>`;
+  $("#btnNextLesson").disabled = false;
+  $("#btnNextLesson").onclick = ()=> completeLesson(ls.xp||10);
 }
 
-// ---------- Eventos UI / preparar pantalla inicial ----------
-function renderSkillsScreen(){ renderBalances(); renderCarousel(); renderSkillsGrid(); }
-$('#btnStart').onclick=()=>{ renderSkillsScreen(); show('screen-skills'); };
-$('#btnViewGrid').onclick=()=>{ const w=$('#skillsGridWrap'); w.style.display= (w.style.display==='none'?'block':'none'); };
-$('#btnEnterSkill').onclick=()=>openSkill(currentSkillIndex);
-$('#btnDaily').onclick=()=>{ openDailyChest(); };
-$('#btnConvert').onclick=()=>{ const minted=convertXp(0.1,9999); renderBalances(); toast(minted>0?`+🪙 ${minted}`:'Nada por convertir'); };
-$('#btnReset').onclick=()=>{ if(confirm('¿Reiniciar todo?')){ state=structuredClone(defaultState); save(); renderSkillsScreen(); } };
-$('#btnGoShop').onclick=()=>renderShop();
-$('#shopBtn').onclick=()=>renderShop();
 
-// NUEVOS botones
-$('#profileBtn').onclick=()=>{ renderBalances(); renderProfile(); show('screen-profile'); };
-$('#questsBtn').onclick=()=>{ renderBalances(); renderMissions(); show('screen-quests'); };
-$('#rerollMissionsBtn').onclick=()=>{
-  const today=todayKey();
-  if(state.rerolledToday && state.lastMissionsDay===today){ return toast('Ya usaste el re-rol hoy'); }
-  state.rerolledToday = true;
-  rollMissionsIfNeeded(true);
-  renderMissions();
-  toast('Misiones actualizadas');
-};
+    $("#btnGuest").onclick = ()=>{show("screen-skills");renderCard();}
+    $("#btnBackWelcome").onclick = ()=> show("screen-welcome");
+    $("#btnBackSkills").onclick = () => show("screen-skills");
+    $("#btnBackRoadmap").onclick = ()=> show("screen-roadmap");
 
-renderBalances(); renderSkillsScreen();
-if(location.hash==='#skills') show('screen-skills');
-if(location.hash==='#skill') show('screen-skill');
-if(location.hash==='#shop') show('screen-shop');
-if(location.hash==='#profile') show('screen-profile');
-if(location.hash==='#quests') show('screen-quests');
-</script>
+
+    // inicio
+    renderCard();
+  </script>
 </body>
 </html>
