@@ -5,6 +5,34 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <title>Nu9ve — App + Firebase (Next/Public)</title>
 <style>
+  /* --- ROADMAP: niveles bloqueados con nube --- */
+.lvl.lock .overlay.cloud{
+  position:absolute; inset:0; display:grid; place-items:center; border-radius:12px;
+  background: rgba(255,255,255,.75);
+}
+.lvl.lock .overlay.cloud::after{
+  content:"";
+  width:56px; height:56px;
+  background: url('/assets/ui/cloud.png') center/contain no-repeat;
+  opacity:.9;
+}
+
+/* --- Nodo visual para el número del nivel --- */
+.lvl .badge .b{
+  background: transparent !important;
+  border: 0;
+  width: 28px; height: 28px; border-radius: 999px;
+  background: url('/assets/ui/node.png') center/contain no-repeat;
+  color:#111; font-weight:800;
+}
+
+/* --- “Hero” con fondo del mundo arriba del roadmap --- */
+#skillHero{
+  height:120px; border-radius:16px; margin:12px 0;
+  background:#eee center/cover no-repeat;
+  box-shadow:var(--shadow);
+}
+
   :root{--bg:#F7EFE3;--bg-2:#FFF9F1;--ink:#1F2937;--muted:#6B7280;--card:#FFFFFF;--primary:#F59E0B;--ok:#10B981;--danger:#EF4444;--radius:16px;--shadow:0 8px 24px rgba(0,0,0,.08)}
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -110,7 +138,10 @@
   <!-- BIENVENIDA -->
   <section id="screen-welcome" class="screen active">
     <div class="card" style="display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center">
-      <div style="font-size:64px;line-height:1">🦫</div>
+      <div style="line-height:1">
+  <img src="/assets/capy/avatar.png" alt="Capy" width="64" height="64" style="border-radius:12px"/>
+</div>
+
       <h2 style="margin:0">¡Hola! Soy <b>Capy</b>, tu guía</h2>
       <p class="muted" style="margin:0">Elige tus habilidades como <b>cartas</b>, juega con <b>vidas</b> ❤️ y usa <b>pistas</b> 💡. Ahora sincroniza con <b>Firebase</b>.</p>
       <div class="row" style="gap:8px">
@@ -155,6 +186,7 @@
   <!-- MAPA 5 NIVELES -->
   <section id="screen-skill" class="screen">
     <div class="row">
+      
       <button class="icon-btn" data-nav="skills" aria-label="Volver a habilidades">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -162,6 +194,9 @@
       <span class="pill mini" id="skillWorld">Mundo</span>
       <div class="pill mini" id="equipView" style="margin-left:auto;display:none"></div>
     </div>
+
+    <div id="skillHero" aria-hidden="true"></div>
+
 
     <div class="card" style="margin-top:12px">
       <div class="row">
@@ -316,6 +351,23 @@ const ITEMS = [
       { coins:80, weight:40 }, { gems:2, weight:25 }, { itemId:"skin_capy_scout", weight:35 }
   ]}, active:true }
 ];
+// === Rutas para fondos de mundos ===
+const SPRITES = {
+  worlds: {
+    Selva: "/assets/worlds/selva.png",
+  }
+};
+
+// Aplica el fondo del mundo en el hero
+function applyWorldBg(worldName){
+  const hero = document.getElementById('skillHero');
+  const path = SPRITES.worlds[worldName];
+  if(hero){
+    if(path) hero.style.backgroundImage = `url('${path}')`;
+    else hero.style.background = '#eee';
+  }
+}
+
 
 const META = [
   { id:'comunicacion', title:'Comunicación', color:'#F59E0B', world:'Selva' },
@@ -533,15 +585,21 @@ function renderSkillsGrid(){
 function openSkill(i){
   currentSkillIndex=i;
   const sk=SKILLS[i], ps=state.skills[i];
+
+  // ✅ aquí llamamos a la función en una línea aparte
+  applyWorldBg(sk.world);
+
   $('#skillTitle').textContent=sk.title;
   $('#skillWorld').textContent=sk.world;
   $('#skillXP').textContent=ps.gainedXP;
   const path=$('#levelsPath'); path.innerHTML='';
+  
   for(let li=0; li<5; li++){
     const done = li < ps.done;
     const unlocked = li <= ps.done;
     const lvl=document.createElement('button');
-    lvl.type='button'; lvl.className='lvl'+(done?' done':'')+(unlocked?'':' lock');
+    lvl.type='button';
+    lvl.className='lvl'+(done?' done':'')+(unlocked?'':' lock');
     lvl.innerHTML=`
       <div class="badge">
         <div class="b" style="background:${sk.color}">${li+1}</div>
@@ -549,13 +607,14 @@ function openSkill(i){
       </div>
       <div class="p"><span style="width:${done?100:0}%"></span></div>
       <div class="mini muted">${done?'Completado':'Por completar'}</div>
-      ${unlocked?'':'<div class="overlay">🔒</div>'}
+      ${unlocked?'':'<div class="overlay cloud" title="Bloqueado"></div>'}
     `;
     if(unlocked) lvl.onclick=()=>startLesson(i, li);
     path.appendChild(lvl);
   }
   show('screen-skill');
 }
+
 
 let cur={skill:0, lesson:0, mode:'', q:0, accXP:0, selected:null, selectedSet:new Set(), node:0, step:0, rapport:0, lives:3, hintUsed:false};
 const feedback = (ok,msg)=>{ const box=$('#lessonFeedback'); box.style.display='block'; if(ok){ box.classList.add('ok'); } else { box.classList.remove('ok'); } box.textContent=msg; };
@@ -781,6 +840,10 @@ function renderProfile(){
   $('#profileGems').textContent = state.gems;
   $('#profileXpText').textContent = `${xpInto} / ${xpNeed} XP`;
   $('#profileXpBar').style.width = Math.round((xpInto/xpNeed)*100)+'%';
+
+  const av = document.getElementById('profileAvatar');
+if(av) av.innerHTML = `<img src="/assets/capy/avatar.png" alt="Capy" width="56" height="56" style="border-radius:12px" />`;
+
 
   const userName = $('#userBadge').textContent || 'Invitado';
   $('#profileName').textContent = userName.replace('Hola, ', '') || 'Invitado';
